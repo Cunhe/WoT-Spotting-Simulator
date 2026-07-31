@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>坦克世界 · 点亮模拟器</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0f0c;--card:#121a14;--elev:#1a241c;--border:#2a3a2e;--text:#e8f0e9;--muted:#8a9a8c;--accent:#4ade80;--glow:rgba(74,222,128,.25);--danger:#f87171;--warn:#fbbf24;--radius:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5;background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(34,197,94,.12),transparent)}
+.container{max-width:1180px;margin:0 auto;padding:24px 16px 48px}
+header{text-align:center;margin-bottom:32px}
+header h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;background:linear-gradient(135deg,#4ade80,#86efac,#bbf7d0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+header p{color:var(--muted);font-size:.95rem;max-width:640px;margin:0 auto}
+.badge{display:inline-block;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);color:var(--accent);font-size:.75rem;font-weight:600;padding:4px 12px;border-radius:999px;margin-top:12px}
+.main-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:0 8px 32px rgba(0,0,0,.45)}
+.card-title{font-size:1.05rem;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.card-title .icon{width:28px;height:28px;background:rgba(74,222,128,.15);border-radius:8px;display:grid;place-items:center;font-size:14px}
+.field{margin-bottom:18px}
+.field label{display:flex;justify-content:space-between;align-items:baseline;font-size:.88rem;font-weight:500;color:var(--muted);margin-bottom:8px}
+.field label .value{font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:600;font-size:.95rem}
+input[type=range]{-webkit-appearance:none;width:100%;height:8px;background:var(--elev);border-radius:4px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:var(--accent);border-radius:50%;cursor:pointer;box-shadow:0 0 0 4px var(--glow);transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+.toggle-group{display:flex;gap:8px;flex-wrap:wrap}
+.toggle{flex:1;min-width:80px;padding:10px 8px;background:var(--elev);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:.85rem;font-weight:500;cursor:pointer;text-align:center;transition:all .2s;user-select:none}
+.toggle:hover{border-color:#3d4f40}
+.toggle.active{background:rgba(74,222,128,.15);border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.check-row{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer;user-select:none}
+.check-row input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.check-row span{font-size:.9rem;color:var(--muted)}
+.check-row:hover span{color:var(--text)}
+.result-panel{text-align:center;padding:20px 0 8px}
+.result-label{font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.result-value{font-family:'JetBrains Mono',monospace;font-size:3.2rem;font-weight:700;color:var(--accent);line-height:1;text-shadow:0 0 40px var(--glow)}
+.result-unit{font-size:1.1rem;color:var(--muted);margin-left:4px}
+.result-sub{margin-top:10px;font-size:.85rem;color:var(--muted)}
+.result-sub strong{color:var(--warn)}
+.formula-box{background:var(--elev);border-radius:10px;padding:14px 16px;margin-top:16px;font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--muted);line-height:1.7;overflow-x:auto}
+.formula-box .hl{color:var(--accent)}
+#radar{width:100%;height:auto;display:block;border-radius:10px;background:#0d1510;cursor:crosshair}
+.viz-hint{text-align:center;font-size:.8rem;color:var(--muted);margin-top:10px}
+.legend{display:flex;flex-wrap:wrap;gap:12px 18px;justify-content:center;margin-top:14px;font-size:.8rem}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-dot{width:12px;height:12px;border-radius:50%}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:28px}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.info-card h3{font-size:.95rem;margin-bottom:10px;color:var(--accent)}
+.info-card p,.info-card ul{font-size:.85rem;color:var(--muted)}
+.info-card ul{padding-left:18px}
+.info-card li{margin-bottom:4px}
+footer{text-align:center;margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:.8rem;color:var(--muted)}
+@media(max-width:600px){.result-value{font-size:2.4rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>坦克世界 · 点亮模拟器</h1>
+<p>基于官方点亮公式的可视化工具。实时计算观测距离，支持草丛加成与开火惩罚模拟。</p>
+<div class="badge">纯前端 · 可部署 Cloudflare Pages · 无数据存储</div>
+</header>
+<div class="main-grid">
+<div class="card">
+<div class="card-title"><span class="icon">⚙️</span> 参数设置</div>
+<div class="field">
+<label>观测者有效视野 <span class="value" id="viewRangeVal">400 m</span></label>
+<input type="range" id="viewRange" min="200" max="650" step="1" value="400">
+</div>
+<div class="field">
+<label>目标基础隐蔽系数 <span class="value" id="baseCamoVal">25.0%</span></label>
+<input type="range" id="baseCamo" min="0" max="80" step="0.5" value="25">
+<div style="font-size:.75rem;color:var(--muted);margin-top:4px">提示：真实坦克基础隐蔽通常 5%~45%，游戏内显示值不准确</div>
+</div>
+<div class="field">
+<label>目标状态</label>
+<div class="toggle-group" id="statusGroup">
+<div class="toggle active" data-status="still">静止</div>
+<div class="toggle" data-status="moving">移动</div>
+<div class="toggle" data-status="shot">刚开火</div>
+</div>
+</div>
+<div class="field">
+<label>草丛 / 环境隐蔽加成 <span class="value" id="bushVal">0%</span></label>
+<input type="range" id="bushBonus" min="0" max="100" step="1" value="0">
+<div style="font-size:.75rem;color:var(--muted);margin-top:4px">单草约 25~50%，双草可达 80~100%。密林最高约 64%（官方）</div>
+</div>
+<div class="check-row"><input type="checkbox" id="isFiring"><span>开火惩罚（15m 内草丛效果降至 30%）</span></div>
+<div class="check-row"><input type="checkbox" id="camoNet"><span>伪装网已激活（+约 5~10% 隐蔽，视车型）</span></div>
+<div class="field" style="margin-top:12px">
+<label>伪装网 / 涂装额外加成 <span class="value" id="extraCamoVal">0%</span></label>
+<input type="range" id="extraCamo" min="0" max="20" step="0.5" value="0">
+</div>
+<div class="result-panel">
+<div class="result-label">计算出的点亮距离</div>
+<div><span class="result-value" id="spotRange">245</span><span class="result-unit">m</span></div>
+<div class="result-sub" id="resultHint">在 <strong>245 m</strong> 以内可点亮目标（最大上限 445 m）</div>
+</div>
+<div class="formula-box" id="formulaDisplay">公式：Range = VR − (VR − 50) × Camo<br>= <span class="hl">400</span> − (400 − 50) × <span class="hl">0.250</span><br>= <span class="hl">245.0 m</span></div>
+</div>
+<div class="card">
+<div class="card-title"><span class="icon">📡</span> 点亮范围可视化</div>
+<canvas id="radar" width="560" height="560"></canvas>
+<div class="viz-hint">拖动下方滑块或点击画布调整敌方距离 · 绿色圆环为点亮边界</div>
+<div class="field" style="margin-top:16px">
+<label>当前敌方距离 <span class="value" id="enemyDistVal">200 m</span></label>
+<input type="range" id="enemyDist" min="0" max="500" step="1" value="200">
+</div>
+<div class="legend">
+<div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> 50 m 强亮</div>
+<div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> 点亮距离</div>
+<div class="legend-item"><div class="legend-dot" style="background:#64748b"></div> 445 m 上限</div>
+<div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> 敌方位置</div>
+</div>
+</div>
+</div>
+<div class="info-grid">
+<div class="info-card"><h3>📐 核心公式</h3><p>点亮距离 = 视野 − (视野 − 50) × 隐蔽系数</p><p style="margin-top:8px">隐蔽系数 ≥ 1 时，强制为 50 m。<br>计算结果超过 445 m 时，实际最大点亮仍为 445 m。<br>视野超过 445 m 依然有意义，可有效抵消高隐蔽。</p></div>
+<div class="info-card"><h3>🌿 草丛与开火</h3><ul><li>半透明物体（草丛/树）提供环境隐蔽加成（最高约 64%）</li><li>开火时，15 m 半径内的草丛效果降至原来的 30%</li><li>建议开火后迅速后退至 15 m 外以恢复全额草丛隐蔽</li><li>固体障碍（建筑、岩石）提供 100% 隐蔽</li></ul></div>
+<div class="info-card"><h3>⏱️ 检测频率</h3><ul><li>≤ 50 m：每 0.1 秒检测一次</li><li>≤ 150 m：每 0.5 秒</li><li>≤ 270 m：每 1.0 秒</li><li>≤ 445 m：每 2.0 秒</li></ul><p style="margin-top:8px">被点亮后至少保持 5~10 秒可见（随机）。</p></div>
+<div class="info-card"><h3>💡 使用提示</h3><ul><li>游戏内显示的隐蔽值并不准确，建议参考专业数据站</li><li>本模拟器仅做教学与快速估算，实际还需考虑视线遮挡</li><li>视野越高，对敌方隐蔽的“穿透”能力越强</li><li>纯静态页面，可直接上传至 Cloudflare Pages</li></ul></div>
+</div>
+<footer>
+<p>根据 Wargaming 官方 Wiki 点亮机制实现 · 仅供学习交流</p>
+<p style="margin-top:6px">公式参考：wiki.wargaming.net · 版权所有 · 000666.BEST · 翻版必究</p>
+</footer>
+</div>
+<script>
+const state={viewRange:400,baseCamo:25,status:'still',bushBonus:0,isFiring:false,camoNet:false,extraCamo:0,enemyDist:200};
+const statusMultipliers={still:1.0,moving:0.6,shot:0.35};
+const $=id=>document.getElementById(id);
+const canvas=$('radar'),ctx=canvas.getContext('2d');
+function getEffectiveCamoFactor(){let base=state.baseCamo/100*statusMultipliers[state.status];let extra=state.extraCamo/100+(state.camoNet?0.07:0);let bush=state.bushBonus/100;if(state.isFiring&&bush>0)bush*=0.3;return Math.min(base+extra+bush,1)}
+function calcSpottingRange(vr,cf){if(cf>=1)return 50;return Math.max(50,vr-(vr-50)*cf)}
+function update(){const cf=getEffectiveCamoFactor(),raw=calcSpottingRange(state.viewRange,cf),eff=Math.min(raw,445);
+$('viewRangeVal').textContent=state.viewRange+' m';$('baseCamoVal').textContent=state.baseCamo.toFixed(1)+'%';$('bushVal').textContent=state.bushBonus+'%';$('extraCamoVal').textContent=state.extraCamo.toFixed(1)+'%';$('enemyDistVal').textContent=state.enemyDist+' m';
+$('spotRange').textContent=eff.toFixed(1);
+const spotted=state.enemyDist<=eff;const hint=$('resultHint');
+if(raw>445)hint.innerHTML=`计算值 ${raw.toFixed(1)} m，但游戏最大点亮距离为 <strong>445 m</strong>`;
+else hint.innerHTML=`在 <strong>${eff.toFixed(1)} m</strong> 以内可点亮目标`+(spotted?' <span style="color:var(--accent)">· 当前距离已点亮</span>':' <span style="color:var(--danger)">· 当前距离未点亮</span>');
+$('formulaDisplay').innerHTML=`公式：Range = VR − (VR − 50) × Camo<br>= <span class="hl">${state.viewRange}</span> − (${state.viewRange} − 50) × <span class="hl">${cf.toFixed(4)}</span><br>= <span class="hl">${raw.toFixed(2)} m</span>${raw>445?' → 实际生效 <span class="hl">445 m</span>':''}`;
+drawRadar(eff)}
+function drawRadar(spotRange){const dpr=window.devicePixelRatio||1,size=canvas.clientWidth;canvas.width=size*dpr;canvas.height=size*dpr;ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);
+const cx=size/2,cy=size/2,maxR=size*0.42,scale=maxR/500;
+ctx.fillStyle='#0d1510';ctx.fillRect(0,0,size,size);
+ctx.strokeStyle='rgba(74,222,128,.06)';ctx.lineWidth=1;for(let r=50;r<=500;r+=50){ctx.beginPath();ctx.arc(cx,cy,r*scale,0,Math.PI*2);ctx.stroke()}
+ctx.strokeStyle='rgba(74,222,128,.12)';ctx.beginPath();ctx.moveTo(cx-maxR-10,cy);ctx.lineTo(cx+maxR+10,cy);ctx.moveTo(cx,cy-maxR-10);ctx.lineTo(cx,cy+maxR+10);ctx.stroke();
+ctx.beginPath();ctx.arc(cx,cy,445*scale,0,Math.PI*2);ctx.strokeStyle='rgba(100,116,139,.6)';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
+ctx.beginPath();ctx.arc(cx,cy,50*scale,0,Math.PI*2);ctx.strokeStyle='rgba(248,113,113,.7)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='rgba(248,113,113,.08)';ctx.fill();
+const spotR=Math.min(spotRange,500)*scale;ctx.beginPath();ctx.arc(cx,cy,spotR,0,Math.PI*2);ctx.strokeStyle='#4ade80';ctx.lineWidth=3;ctx.shadowColor='rgba(74,222,128,.5)';ctx.shadowBlur=12;ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='rgba(74,222,128,.07)';ctx.fill();
+ctx.font='11px "Noto Sans SC",sans-serif';ctx.fillStyle='rgba(248,113,113,.9)';ctx.fillText('50m 强亮',cx+50*scale+6,cy-4);
+ctx.fillStyle='rgba(74,222,128,.95)';ctx.fillText(spotRange.toFixed(0)+'m 点亮',cx+spotR+6,cy+4);
+ctx.fillStyle='rgba(148,163,184,.8)';ctx.fillText('445m',cx+445*scale+4,cy-6);
+ctx.beginPath();ctx.arc(cx,cy,9,0,Math.PI*2);ctx.fillStyle='#4ade80';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+ctx.beginPath();ctx.moveTo(cx,cy-9);ctx.lineTo(cx-5,cy-16);ctx.lineTo(cx+5,cy-16);ctx.closePath();ctx.fill();
+const enemyR=Math.min(state.enemyDist,500)*scale,ex=cx,ey=cy-enemyR;
+ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ex,ey);ctx.strokeStyle=state.enemyDist<=spotRange?'rgba(74,222,128,.45)':'rgba(248,113,113,.35)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+ctx.beginPath();ctx.arc(ex,ey,8,0,Math.PI*2);ctx.fillStyle=state.enemyDist<=spotRange?'#fbbf24':'#64748b';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+ctx.font='bold 12px "JetBrains Mono",monospace';ctx.fillStyle=state.enemyDist<=spotRange?'#fbbf24':'#94a3b8';ctx.textAlign='center';ctx.fillText(state.enemyDist+'m',ex,ey-14);ctx.textAlign='left';
+ctx.font='10px "Noto Sans SC"';ctx.fillStyle='rgba(255,255,255,.5)';ctx.textAlign='center';ctx.fillText('你',cx,cy+22);ctx.textAlign='left'}
+$('viewRange').addEventListener('input',e=>{state.viewRange=+e.target.value;update()});
+$('baseCamo').addEventListener('input',e=>{state.baseCamo=+e.target.value;update()});
+$('bushBonus').addEventListener('input',e=>{state.bushBonus=+e.target.value;update()});
+$('extraCamo').addEventListener('input',e=>{state.extraCamo=+e.target.value;update()});
+$('enemyDist').addEventListener('input',e=>{state.enemyDist=+e.target.value;update()});
+$('isFiring').addEventListener('change',e=>{state.isFiring=e.target.checked;update()});
+$('camoNet').addEventListener('change',e=>{state.camoNet=e.target.checked;update()});
+document.querySelectorAll('#statusGroup .toggle').forEach(el=>{el.addEventListener('click',()=>{document.querySelectorAll('#statusGroup .toggle').forEach(t=>t.classList.remove('active'));el.classList.add('active');state.status=el.dataset.status;update()})});
+canvas.addEventListener('click',e=>{const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top,size=canvas.clientWidth,cx=size/2,cy=size/2,dx=x-cx,dy=y-cy,distPx=Math.sqrt(dx*dx+dy*dy),maxR=size*0.42,meters=Math.min(500,Math.max(0,Math.round(distPx/maxR*500)));state.enemyDist=meters;$('enemyDist').value=meters;update()});
+window.addEventListener('resize',()=>update());
+update();
+</script>
+</body>
+</html>
